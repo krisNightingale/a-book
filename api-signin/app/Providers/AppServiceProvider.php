@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\MailService;
 use Illuminate\Support\ServiceProvider;
+use Memcached;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,12 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton('MailService', function (){
             return new MailService();
+        });
+
+        $this->app->singleton('memcached', function (){
+            $cache = new Memcached();
+            $cache->addServers(config('cache.memcached.servers'));
+            return $cache;
         });
     }
 }

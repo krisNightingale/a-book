@@ -16,7 +16,7 @@ Route::get('/', function () {
 });
 
 Route::group(['prefix' => 'v1/user'], function () {
-    Route::post('/auth', 'SessionsController@store');           //DONE
+    Route::post('/auth', 'SessionsController@signIn');           //DONE
     Route::post('/request-password-reset', 'PasswordsController@requestPasswordReset'); //TODO Mail
     Route::post('/set-password', 'PasswordsController@setPassword');                    //DONE
     Route::post('/set-password/by-token', 'PasswordsController@setPasswordByToken');    //DONE

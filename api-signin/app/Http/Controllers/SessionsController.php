@@ -90,7 +90,7 @@ class SessionsController extends Controller
      * Authorize a user
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
-    public function store(){
+    public function signIn(){
         $this->validate(request(), [
             'email' => 'required|email',
             'password' => 'required'
