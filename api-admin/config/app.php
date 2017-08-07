@@ -107,8 +107,6 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
-    'cache_key' => env('CACHE_KEY'),
-
     /*
     |--------------------------------------------------------------------------
     | Logging Configuration

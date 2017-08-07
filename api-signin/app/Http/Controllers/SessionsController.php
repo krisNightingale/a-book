@@ -3,58 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Email;
-use App\User;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Hash;
-use Symfony\Component\HttpFoundation\Session\Session;
+use App\Models\UserSession;
 
 class SessionsController extends Controller
 {
-    //TODO Guest/Auth MIDDLEWARE
-    public function __construct(){
-        //$this->middleware('guest', ['except' => 'destroy']);
-    }
-
     public function create(){
         return view('sessions.create');
     }
 
     /**
      * Checking session
-     * @param Request $request
      * @return bool | string
      */
-    public static function checkSession(Request $request){
-        //A session key retrieved when authorized
-        $token = $request->header('X-CSRF-TOKEN');
-        $user = Cache::get($token);
+    public static function checkSession(){
 
-        if (!$token){
+        $userSession = resolve('UserSession');
+
+        if (!$userSession){
             return response('Authorization Required', 401);
         }
-        if (!$user){
+        if (!$userSession->check()){
             return response('Access Forbidden', 403);
         }
-        return response($user, 200);
+
+        //TODO prolong if expired
+
+        return response($userSession->getUserId(), 200);
     }
     /**
      * Expiring a user's session, a.k.a. logout
-     * @param Request $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
-    public function destroy(Request $request){
+    public function destroy(){
 
-        //A session key retrieved when authorized
-        $token = $request->header('X-CSRF-TOKEN');
+        $userSession = resolve('UserSession');
 
-        if (!$token){
+        if (!$userSession){
             return response('Authorization Required', 401);
         }
 
-        if (!Cache::pull($token)){
+        if (!$userSession->expire()){
             return response('Access Forbidden', 403);
         }
 
@@ -63,23 +51,18 @@ class SessionsController extends Controller
 
     /**
      * Prolong a user's session
-     * @param Request $request
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
      */
-    public function prolong(Request $request){
-        //A session key retrieved when authorized
-        $token = $request->header('X-CSRF-TOKEN');
+    public function prolong(){
 
-        if (!$token){
+        $userSession = resolve('UserSession');
+
+        if (!$userSession){
             return response('Authorization Required', 401);
         }
 
-        $cacheInstance = Cache::get($token);
-        $expiresAt = Carbon::now()->addMinutes(60);
-
-        if ($cacheInstance){
-            Cache::put($token, $cacheInstance, $expiresAt);
-            return response('Session prolonged', 200);
+        if ($userSession->prolong()){
+            response('Session prolonged', 200);
         }
 
         return response('Access Forbidden', 403);
@@ -105,21 +88,16 @@ class SessionsController extends Controller
             return response('Access forbidden', 403);
         }
 
-        $expiresAt = Carbon::now()->addMinutes(60);
-        $token = self::generateToken($userID.$email);
-
-        Cache::add($token, $userID, $expiresAt);
+        $userSession = resolve('UserSession');
+        if ($userSession){
+            return response('You are already authorized', 302)
+                ->header('X-CSRF-TOKEN', $userSession->getToken());
+        }
+        $userSession = new UserSession();
+        $userSession->create($userID);
 
         return response('Authorization OK', 200)
-            ->header('X-CSRF-TOKEN', $token);
-    }
-
-    /**
-     * @param string $string
-     * @return string
-     */
-    public static function generateToken($string){
-        return md5($string);
+            ->header('X-CSRF-TOKEN', $userSession->getToken());
     }
 
     /**

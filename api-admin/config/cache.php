@@ -86,6 +86,6 @@ return [
     |
     */
 
-    'prefix' => 'api-signin',
+    'prefix' => 'api-admin',
 
 ];
